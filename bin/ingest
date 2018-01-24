@@ -1,0 +1,26 @@
+#! /bin/env/node
+
+const fs = require('fs');
+const Q = require('q');
+const path = require('path');
+const BugCollector = require('..');
+
+const collector = new BugCollector();
+const bugFilename = process.argv[2];
+if (!bugFilename) {
+    console.error('usage: ingest <bug file>');
+    process.exit(1);
+}
+
+collector.connect()
+    .then(() => {
+        let report = JSON.parse(fs.readFileSync(bugFilename, 'utf8'));
+        return collector.ingest(report)
+            .then(report => console.log('Report stored as', report._id));
+    })
+    .then(() => collector.disconnect())
+    .catch(err => {
+        console.error(err);
+        collector.disconnect();
+    })
+

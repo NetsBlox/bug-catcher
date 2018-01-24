@@ -1,0 +1,99 @@
+#! /bin/env/node
+
+const program = require('commander');
+const pkg = require('../package');
+const fs = require('fs');
+const path = require('path');
+const BugCollector = require('..');
+
+if (process.argv.length === 2) process.argv.push('--help');
+program
+    .version(pkg.version)
+    .command('ls')
+    .option('-q, --quiet', 'Only display bug ids')
+    //.option('-l, --long', 'Display bugs in long mode')
+    .action(cmd => {
+        const collector = new BugCollector();
+
+        function format(report) {
+            if (cmd.quiet) {
+                return report._id;
+            } else {
+                return [
+                    report._id,
+                    report.error
+                ].join('\t');
+            }
+        }
+
+        collector.connect()
+            .then(() => collector.getBugs())
+            .then(bugs => {
+                console.log(bugs.map(format).join('\n'));
+            })
+            .then(() => collector.disconnect())
+            .catch(err => {
+                console.log(err);
+                collector.disconnect();
+            });
+    });
+
+program
+    .command('combine [ids...]')
+    .action(ids => {
+        const collector = new BugCollector();
+
+        collector.connect()
+            .then(() => collector.combine(ids))
+            .then(() => console.log('Combined the bug reports!'))
+            .then(() => collector.disconnect())
+            .catch(err => {
+                console.log(err);
+                collector.disconnect();
+            });
+    });
+
+program
+    .command('reports <id> [count]')
+    .action((bugId, count) => {
+        const collector = new BugCollector();
+
+        collector.connect()
+            .then(() => collector.getReportsFor(bugId, count))
+            .then(reports => {
+                console.log('found', reports.length, 'reports');
+                return collector.getBugById(bugId)
+                    .then(bug => {
+                        console.log(bug.error);
+                        let success = false;
+                        const basename = bug.error.split('@').shift()
+                            .split(/[^a-zA-Z0-9]/).pop();
+                        let dirname = basename;
+                        let index = 2;
+
+                        while (!success) {
+                            try {
+                                fs.mkdirSync(dirname);
+                                success = true;
+                            } catch(e) {
+                                dirname = `${basename}_${index}`;
+                                index++;
+                            }
+                        }
+
+                        reports.forEach((report, i) => {
+                            const version = report.version;
+                            const name = path.join(dirname, `bug-report-v${version}-${i}.json`);
+                            fs.writeFileSync(name, JSON.stringify(report));
+                        });
+                        console.log(`saved reports to ${path.resolve(dirname)}`);
+                    });
+            })
+            .then(() => collector.disconnect())
+            .catch(err => {
+                console.log(err);
+                collector.disconnect();
+            });
+    });
+program.parse(process.argv);
+
