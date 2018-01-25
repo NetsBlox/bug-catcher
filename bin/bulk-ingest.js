@@ -23,8 +23,7 @@ collector.connect()
                     return collector.hasReport(report)
                         .then(exists => {
                             if (exists) {
-                                reportCount--;
-                                return console.log(`${name} already exists. Skipping...`);
+                                return reportCount--;
                             }
                             return collector.ingest(report);
                         });
