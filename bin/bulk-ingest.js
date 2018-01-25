@@ -7,22 +7,41 @@ const ProgressBar = require('progress');
 const collector = new BugCollector();
 const BUG_DIR = path.join(__dirname, '..', 'raw-bugs');
 let reportCount = 0;
+let initialBugCount = 0;
 collector.connect()
+    .then(() => collector.getBugCount())
+    .then(count => initialBugCount = count)
     .then(() => {
         const files = fs.readdirSync(BUG_DIR);
         reportCount = files.length;
         const bar = new ProgressBar('Ingesting bug reports: :percent complete', {total: files.length})
         return files.reduce((prev, name) => {
-            let report = require(`${BUG_DIR}/${name}`)
-            return prev
-                .then(() => collector.ingest(report))
-                .then(() => bar.tick());
+            let promise = prev;
+            try {
+                let report = require(`${BUG_DIR}/${name}`)
+                promise = prev.then(() => {
+                    return collector.hasReport(report)
+                        .then(exists => {
+                            if (exists) {
+                                reportCount--;
+                                return console.log(`${name} already exists. Skipping...`);
+                            }
+                            return collector.ingest(report);
+                        });
+                });
+            } catch (e) {
+                reportCount--;
+                console.error(`Could not load ${name}: ${e.message}`);
+            }
+            return promise.then(() => bar.tick());
         }, Q());
     })
-    .then(() => collector.getBugs())
-    .then(bugs => {
+    .then(() => collector.getBugCount())
+    .then(bugCount => {
+        const newBugCount = bugCount - initialBugCount;
         console.log(`Ingested ${reportCount} new bug reports.`);
-        console.log(`There are now ${bugs.length} total unique bugs`);
+        console.log(`Added ${newBugCount} new unique bugs`);
+        console.log(`There are now ${bugCount} total unique bugs`);
     })
     .then(() => collector.disconnect())
     .catch(err => {

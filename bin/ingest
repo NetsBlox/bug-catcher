@@ -15,8 +15,15 @@ if (!bugFilename) {
 collector.connect()
     .then(() => {
         let report = JSON.parse(fs.readFileSync(bugFilename, 'utf8'));
-        return collector.ingest(report)
-            .then(report => console.log('Report stored as', report._id));
+        return collector.hasReport(report)
+            .then(exists => {
+                if (exists) {
+                    console.error('Report already exists. Skipping ingestion...');
+                } else {
+                    return collector.ingest(report)
+                        .then(report => console.log('Report stored as', report._id));
+                }
+            });
     })
     .then(() => collector.disconnect())
     .catch(err => {

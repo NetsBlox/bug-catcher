@@ -26,9 +26,14 @@ class BugCollector {
         return this.client.close(true);
     }
 
-    ingest (report) {
-        if (!this.connected) throw new Error('Not connected to a database');
+    hasReport (report) {
+        const query = this.preprocess(report);
 
+        return this.reports.findOne(query)
+            .then(doc => !!doc);
+    }
+
+    preprocess(report) {
         // preprocess the report
         if (report.isAutoReport) {
             report.stackTrace = report.description
@@ -40,6 +45,13 @@ class BugCollector {
             report.stackTrace = 'n/a';
         }
 
+        return report;
+    }
+
+    ingest (report) {
+        if (!this.connected) throw new Error('Not connected to a database');
+
+        report = this.preprocess(report);
         return this.classify(report, true)
             .then(bug => {
                 report.bugId = bug._id;
@@ -113,6 +125,9 @@ class BugCollector {
         return Q(this.bugs.find({}).toArray());
     }
 
+    getBugCount () {
+        return Q(this.bugs.count({}));
+    }
 }
 
 module.exports = BugCollector;
