@@ -2,6 +2,8 @@ const Q = require('q');
 const MongoClient = require('mongodb').MongoClient;
 const ObjectID = require('mongodb').ObjectID;
 const conditions = require('./src/conditions');
+const _ = require('lodash');
+const Version = require('./src/version');
 
 class BugCollector {
 
@@ -123,6 +125,25 @@ class BugCollector {
 
     getBugs () {
         return Q(this.bugs.find({}).toArray());
+    }
+
+    getBugStats (bug) {
+        // Statistics include:
+        //   - creation time
+        //   - unique users
+        //   - latest netsblox version
+        //   - latest bug report
+        return Q(this.reports.find({bugId: new ObjectID(bug._id)}).toArray())
+            .then(reports => {
+                if (reports.length === 0) throw new Error(`No reports found for ${bug._id}`)
+                const stats = {};
+                stats.userCount = _.uniq(reports.map(report => report.user)).length;
+                stats.latestVersion = reports
+                    .filter(report => report.version)
+                    .map(report => new Version(report.version))
+                    .reduce((latest, next) => latest.max(next));
+                return stats;
+            });
     }
 
     getBugCount () {

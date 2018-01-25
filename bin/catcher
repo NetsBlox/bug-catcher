@@ -3,6 +3,7 @@
 const program = require('commander');
 const pkg = require('../package');
 const fs = require('fs');
+const Q = require('q');
 const path = require('path');
 const BugCollector = require('..');
 
@@ -11,26 +12,35 @@ program
     .version(pkg.version)
     .command('ls')
     .option('-q, --quiet', 'Only display bug ids')
-    //.option('-l, --long', 'Display bugs in long mode')
+    .option('-l, --long', 'Display bugs in long mode (id|createdAt|reportCount|userCount|latestVersion|error)')
     .action(cmd => {
         const collector = new BugCollector();
 
-        function format(report) {
+        function format(bug) {
             if (cmd.quiet) {
-                return report._id;
+                return [bug._id];
+            } else if (cmd.long) {
+                return collector.getBugStats(bug)
+                    .then(stats => [
+                        bug._id,
+                        new Date(bug.createdAt),
+                        bug.reportCount,
+                        stats.userCount,
+                        stats.latestVersion,
+                        bug.error
+                    ]);
             } else {
                 return [
-                    report._id,
-                    report.error
-                ].join('\t');
+                    bug._id,
+                    bug.error
+                ];
             }
         }
 
         collector.connect()
             .then(() => collector.getBugs())
-            .then(bugs => {
-                console.log(bugs.map(format).join('\n'));
-            })
+            .then(bugs => Q.all(bugs.map(format)))
+            .then(lines => console.log(lines.map(fields => fields.join('\t')).join('\n')))
             .then(() => collector.disconnect())
             .catch(err => {
                 console.log(err);

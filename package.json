@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "commander": "^2.13.0",
+    "lodash": "^4.17.4",
     "mongodb": "^3.0.1",
     "progress": "^2.0.0",
     "q": "^1.5.1"
