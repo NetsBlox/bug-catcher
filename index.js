@@ -119,6 +119,10 @@ class BugCollector {
             });
     }
 
+    getReportById (id) {
+        return Q(this.reports.findOne({_id: new ObjectID(id)}));
+    }
+
     getBugById (id) {
         return Q(this.bugs.findOne({_id: new ObjectID(id)}));
     }

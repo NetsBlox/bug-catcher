@@ -7,6 +7,7 @@ const Q = require('q');
 const path = require('path');
 const BugCollector = require('..');
 const uaParser = require('ua-parser-js');
+const foreground = require('foreground-child');
 
 if (process.argv.length === 2) process.argv.push('--help');
 program
@@ -122,5 +123,32 @@ program
                 collector.disconnect();
             });
     });
+
+program
+    .command('load-report <id>')
+    .action(id => {
+        const collector = new BugCollector();
+
+        collector.connect()
+            .then(() => collector.getReportById(id))
+            .then(report => {
+                const filename = `bug-report-${id}.json`;
+                fs.writeFileSync(filename, JSON.stringify(report));
+                const cmd = 'node';
+                const args = [
+                    `-e`,
+                    `report = require("./${filename}"); console.log('Report has been loaded as "report"')`,
+                    `-i`
+                ];
+                foreground(cmd, args);
+
+            })
+            .then(() => collector.disconnect())
+            .catch(err => {
+                console.log(err);
+                collector.disconnect();
+            });
+    });
+
 program.parse(process.argv);
 
