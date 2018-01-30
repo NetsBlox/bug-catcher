@@ -105,15 +105,21 @@ class BugCollector {
         }, true);
     }
 
+    updateReportCount (bugId) {
+        return Q(this.reports.count({bugId: ObjectID(bugId)}))
+            .then(reportCount => this.bugs.update({_id: ObjectID(bugId)}, {$set: {reportCount: reportCount}}));
+    }
+
     split (bugId, conds) {
         if (!conds.length) throw new Error('Conditions are required for splitting bugs!');
 
         conds.forEach(c => this.ensureValidCondition(c));  // Ensure that the conditions are valid
 
+        let results = null;
         return this.getReportsFor(bugId)
             .then(reports => {
                 const passingReports = reports.filter(report => this.passesConditions(report, conds));
-                const results = {
+                results = {
                     matching: passingReports.length,
                     total: reports.length
                 };
@@ -121,19 +127,28 @@ class BugCollector {
                     return this.getBugById(bugId)
                         .then(bug => {
                             if (passingReports.length === reports.length) {
-                                return this.bugs.updateOne(bug, {conditions: bug.conditions.concat(conds)})
-                                    .then(() => results);
+                                return this.bugs.updateOne(bug, {conditions: bug.conditions.concat(conds)});
                             } else {
                                 delete bug._id;
+                                bug.reportCount = passingReports.length;
                                 bug.conditions = bug.conditions.concat(conds);
+                                bug.createdAt = new Date();
                                 return this.bugs.insertOne(bug)
-                                    .then(() => results);
+                                    .then(result => {  // assign the reports to the new bug
+                                        const newBugId = result.insertedId;
+                                        const query = {
+                                            $or: passingReports.map(report => {
+                                                return {_id: report._id};
+                                            })
+                                        };
+                                        return this.reports.updateMany(query, {$set: {bugId: newBugId}});
+                                    })
+                                    .then(() => this.updateReportCount(bugId));
                             }
                         })
-                } else {
-                    return results;
                 }
-            });
+            })
+            .then(() => results);
     }
 
     combine (bugIds) {
