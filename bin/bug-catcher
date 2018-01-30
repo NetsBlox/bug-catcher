@@ -1,4 +1,4 @@
-#! /bin/env/node
+#! /usr/bin/env node
 
 const program = require('commander');
 const pkg = require('../package');
@@ -10,6 +10,7 @@ const uaParser = require('ua-parser-js');
 const foreground = require('foreground-child');
 
 if (process.argv.length === 2) process.argv.push('--help');
+
 program
     .version(pkg.version)
     .command('ls')
