@@ -5,7 +5,12 @@ const BugCollector = require('..');
 const ProgressBar = require('progress');
 
 const collector = new BugCollector();
-const BUG_DIR = path.join(__dirname, '..', 'raw-bugs');
+const BUG_DIR = path.resolve(process.argv[2]);
+if (!process.argv[2]) {
+    console.error('usage: bulk-ingest <dirname>');
+    process.exit(1);
+}
+
 let reportCount = 0;
 let initialBugCount = 0;
 collector.connect()
@@ -16,23 +21,26 @@ collector.connect()
         reportCount = files.length;
         const bar = new ProgressBar('Ingesting bug reports: :percent complete', {total: files.length})
         return files.reduce((prev, name) => {
-            let promise = prev;
-            try {
-                let report = require(`${BUG_DIR}/${name}`)
-                promise = prev.then(() => {
-                    return collector.hasReport(report)
-                        .then(exists => {
-                            if (exists) {
-                                return reportCount--;
-                            }
-                            return collector.ingest(report);
-                        });
-                });
-            } catch (e) {
-                reportCount--;
-                console.error(`Could not load ${name}: ${e.message}`);
-            }
-            return promise.then(() => bar.tick());
+            return prev.then(() => {
+                let promise = Q();
+                try {
+                    let report = require(`${BUG_DIR}/${name}`)
+                    promise = promise.then(() => {
+                        return collector.hasReport(report)
+                            .then(exists => {
+                                if (exists) {
+                                    return reportCount--;
+                                }
+                                return collector.ingest(report);
+                            });
+                    });
+                } catch (e) {
+                    reportCount--;
+                    console.error(`Could not load ${name}: ${e.message}`);
+                }
+                if (global.gc) global.gc();
+                return promise.then(() => bar.tick());
+            });
         }, Q());
     })
     .then(() => collector.getBugCount())
