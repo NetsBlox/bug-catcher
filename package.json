@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Bug Collector and Analyzer for NetsBlox",
   "main": "index.js",
+  "bin": {
+      "bug-catcher": "./bin/bug-catcher"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
