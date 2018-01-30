@@ -68,7 +68,16 @@ class BugCollector {
 
     classify (report, canCreateNew=false) {
         // Look up a bug report for the given report
-        return this.bugs.findOne({error: report.error})
+        return this.bugs.find({error: report.error}).toArray()
+            .then(bugs => {
+                // match all conditions
+                bugs.sort((a, b) => a.conditions.length > b.conditions.length ? -1 : 1);
+                for (let i = 0; i < bugs.length; i++) {
+                    if (this.passesConditions(report, bugs[i].conditions)) {
+                        return bugs[i];
+                    }
+                }
+            })
             .then(bug => {
                 if (bug || !canCreateNew) return bug;
                 bug = {
@@ -83,6 +92,47 @@ class BugCollector {
                         bug._id = result.insertedId;
                         return bug;
                     });
+            });
+    }
+
+    ensureValidCondition (cond) {
+        if (!conditions[cond]) throw new Error(`Invalid condition: ${cond}`);
+    }
+
+    passesConditions (report, conds) {
+        return conds.reduce((passing, cond) => {
+            return passing && conditions[cond](report);
+        }, true);
+    }
+
+    split (bugId, conds) {
+        if (!conds.length) throw new Error('Conditions are required for splitting bugs!');
+
+        conds.forEach(c => this.ensureValidCondition(c));  // Ensure that the conditions are valid
+
+        return this.getReportsFor(bugId)
+            .then(reports => {
+                const passingReports = reports.filter(report => this.passesConditions(report, conds));
+                const results = {
+                    matching: passingReports.length,
+                    total: reports.length
+                };
+                if (passingReports.length) {
+                    return this.getBugById(bugId)
+                        .then(bug => {
+                            if (passingReports.length === reports.length) {
+                                return this.bugs.updateOne(bug, {conditions: bug.conditions.concat(conds)})
+                                    .then(() => results);
+                            } else {
+                                delete bug._id;
+                                bug.conditions = bug.conditions.concat(conds);
+                                return this.bugs.insertOne(bug)
+                                    .then(() => results);
+                            }
+                        })
+                } else {
+                    return results;
+                }
             });
     }
 

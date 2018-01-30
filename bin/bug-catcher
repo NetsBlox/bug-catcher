@@ -67,6 +67,29 @@ program
     });
 
 program
+    .command('split <id> [conds...]')
+    .action((id, conds) => {
+        const collector = new BugCollector();
+
+        collector.connect()
+            .then(() => collector.split(id, conds))
+            .then(res => {
+                if (res.matching === res.total) {
+                    console.log(`Added condition to bug (all reports matched)!`);
+                } else if (res.matching) {
+                    console.log(`Created new condition with ${res.matching} reports`);
+                } else {
+                    console.log(`No matching conditions. Bug not modified`);
+                }
+            })
+            .then(() => collector.disconnect())
+            .catch(err => {
+                console.log(err);
+                collector.disconnect();
+            });
+    });
+
+program
     .command('reports <id> [count]')
     .option('-e,--export', 'Export reports to the filesystem')
     .action((bugId, count, cmd) => {

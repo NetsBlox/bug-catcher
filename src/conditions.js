@@ -12,6 +12,13 @@ function hasBeenDeleted(report, id) {
     return !!event;
 }
 
+function hasUndefinedOwner(report, id) {
+    if (!report.event) return false;
+    const owner = report.event.owner;
+    return owner && owner.startsWith('undefined');
+}
+
 module.exports = {
     hasDeletedFailingBlock,
+    hasUndefinedOwner,
 };
