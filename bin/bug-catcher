@@ -190,6 +190,7 @@ program
 
 program
     .command('list-conds')
+    .description('List all available conditions.')
     .action(() => console.log(Object.keys(Conditions).join('\n')));
 
 program.parse(process.argv);
