@@ -172,10 +172,11 @@ program
             .then(report => {
                 const filename = `bug-report-${id}.json`;
                 fs.writeFileSync(filename, JSON.stringify(report));
+                const reportCtorPath = path.join(__dirname, '..', 'src', 'helpers', 'report');
                 const cmd = 'node';
                 const args = [
                     `-e`,
-                    `report = require("./${filename}"); console.log('Report has been loaded as "report"')`,
+                    `Report = require("${reportCtorPath}"); report = new Report(require("./${filename}")); console.log('Report has been loaded as "report"')`,
                     `-i`
                 ];
                 foreground(cmd, args);
