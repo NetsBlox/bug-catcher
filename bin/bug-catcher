@@ -106,6 +106,7 @@ program
 program
     .command('reports <id> [count]')
     .option('-e,--export', 'Export reports to the filesystem')
+    .option('-l, --light', 'Export a lighter version of the report')
     .action((bugId, count, cmd) => {
         const collector = new BugCollector();
 
@@ -134,6 +135,10 @@ program
                             }
 
                             reports.forEach((report, i) => {
+                                if (cmd.light) {
+                                    delete report.project;
+                                    delete report.screenshot;
+                                }
                                 const version = report.version;
                                 const name = path.join(dirname, `bug-report-v${version}-${i}.json`);
                                 fs.writeFileSync(name, JSON.stringify(report));
