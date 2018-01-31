@@ -12,13 +12,36 @@ function hasBeenDeleted(report, id) {
     return !!event;
 }
 
-function hasUndefinedOwner(report, id) {
+function hasUndefinedOwner(report) {
     if (!report.event) return false;
     const owner = report.event.owner;
     return owner && owner.startsWith('undefined');
 }
 
+function isCollaborating(report) {
+    const editors = {};
+    let usesCollaboration = false;
+
+    if (!report.undoState) {
+        console.log(report);
+        return false;
+    }
+
+    report.undoState.allEvents
+        .map(event => event.user)
+        .reduce((prev, next) => {
+            editors[prev] = true;
+            if (next !== prev && editors[next]) {
+                usesCollaboration = true;
+            }
+            return next;
+        }, []);
+
+    return usesCollaboration;
+}
+
 module.exports = {
     hasDeletedFailingBlock,
     hasUndefinedOwner,
+    isCollaborating,
 };
