@@ -6,6 +6,7 @@ const fs = require('fs');
 const Q = require('q');
 const path = require('path');
 const BugCollector = require('..');
+const Conditions = require('../src/conditions');
 const uaParser = require('ua-parser-js');
 const foreground = require('foreground-child');
 
@@ -175,5 +176,8 @@ program
             });
     });
 
-program.parse(process.argv);
+program
+    .command('list-conds')
+    .action(() => console.log(Object.keys(Conditions).join('\n')));
 
+program.parse(process.argv);
