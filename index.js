@@ -164,14 +164,14 @@ class BugCollector {
                 return {bugId: id};
             })
         };
-        return this.reports.update(query, {bugId: remainingBugId})
+        return this.reports.updateMany(query, {$set: {bugId: remainingBugId}})
             .then(() => {  // remove all but the first id
                 const oldBugs = {
                     $or: removeBugIds.map(id => {
                         return {_id: id};
                     })
                 };
-                return this.bugs.deleteMany(query);
+                return this.bugs.deleteMany(oldBugs);
             });
     }
 

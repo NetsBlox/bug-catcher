@@ -30,7 +30,8 @@ program
                         bug.reportCount,
                         stats.userCount,
                         stats.latestVersion,
-                        bug.error
+                        bug.error,
+                        `(${bug.conditions.join('|')})`
                     ]);
             } else {
                 return [
