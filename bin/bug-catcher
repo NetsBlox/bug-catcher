@@ -21,25 +21,37 @@ program
         const collector = new BugCollector();
 
         function format(bug) {
+            let fields = [];
             if (cmd.quiet) {
                 return [bug._id];
             } else if (cmd.long) {
                 return collector.getBugStats(bug)
-                    .then(stats => [
-                        bug._id,
-                        new Date(bug.createdAt),
-                        bug.reportCount,
-                        stats.userCount,
-                        stats.latestVersion,
-                        bug.error,
-                        `(${bug.conditions.join('|')})`
-                    ]);
+                    .then(stats => {
+                        fields = [
+                            bug._id,
+                            new Date(bug.createdAt),
+                            bug.reportCount,
+                            stats.userCount,
+                            stats.latestVersion,
+                            bug.error
+                        ];
+                        if (bug.conditions.length) {
+                            fields.push(`(${bug.conditions.join('|')})`);
+                        }
+                        return fields;
+                    });
             } else {
-                return [
+                fields = [
                     bug._id,
                     bug.error
                 ];
             }
+
+            if (bug.conditions.length) {
+                fields.push(`(${bug.conditions.join('|')})`);
+            }
+
+            return fields;
         }
 
         collector.connect()
