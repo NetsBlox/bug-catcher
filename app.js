@@ -1,7 +1,6 @@
 const app = require('express')();
 const fs = require('fs');
 const path = require('path');
-const rootPath = process.env.BUG_DIR || path.join(__dirname, 'raw-bugs');
 
 const BugCollector = require('.');
 const collector = new BugCollector();
@@ -25,5 +24,7 @@ app.post('/', (req, res) => {
     });
 });
 
+const port = +process.env.PORT || 8888;
 collector.connect()
-    .then(() => app.listen(process.env.PORT));
+    .then(() => app.listen(port))
+    .then(() => console.log('listening for bug reports on port:', port));
