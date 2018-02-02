@@ -1,6 +1,5 @@
 function hasDeletedFailingBlock(report) {
-    if (!report.event)
-        return console.log('report', report.id);
+    if (!report.event) return false;
 
     const [id] = report.event.args;
     return hasBeenDeleted(report, id);
@@ -14,18 +13,16 @@ function hasBeenDeleted(report, id) {
 
 function hasUndefinedOwner(report) {
     if (!report.event) return false;
+
     const owner = report.event.owner;
     return owner && owner.startsWith('undefined');
 }
 
 function isCollaborating(report) {
+    if (!report.undoState) return false;
+
     const editors = {};
     let usesCollaboration = false;
-
-    if (!report.undoState) {
-        console.log(report);
-        return false;
-    }
 
     report.undoState.allEvents
         .map(event => event.user)
