@@ -4,15 +4,17 @@
   "description": "Bug Collector and Analyzer for NetsBlox",
   "main": "index.js",
   "bin": {
-      "bug-catcher": "./bin/bug-catcher"
+    "bug-catcher": "./bin/bug-catcher"
   },
   "scripts": {
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Brian Broll",
   "license": "ISC",
   "dependencies": {
     "commander": "^2.13.0",
+    "express": "^4.16.2",
     "foreground-child": "^1.5.6",
     "lodash": "^4.17.4",
     "mongodb": "^3.0.1",

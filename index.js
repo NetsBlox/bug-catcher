@@ -37,14 +37,25 @@ class BugCollector {
 
     preprocess(report) {
         // preprocess the report
-        if (report.isAutoReport) {
-            report.stackTrace = report.description
-                .split('Error:\n')[1].split('---')[0];
+        if (report.bugType === 'Client') {
+            if (report.isAutoReport) {
+                report.stackTrace = report.description
+                    .split('Error:\n')[1].split('---')[0];
 
-            report.error = report.stackTrace.split('\n')[0];
-        } else {
-            report.error = report.description;
-            report.stackTrace = 'n/a';
+                report.error = report.stackTrace.split('\n')[0];
+            } else {
+                report.error = report.description;
+                report.stackTrace = 'n/a';
+            }
+        }
+
+        // add matching conditions
+        report.conditions = [];
+        for (let cond in conditions) {
+            let fn = conditions[cond];
+            if (fn(report)) {
+                report.conditions.push(cond);
+            }
         }
 
         return report;
