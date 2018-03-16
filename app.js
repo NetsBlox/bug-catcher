@@ -25,7 +25,7 @@ app.post('/', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.send(`Bug-Catcher up and running! POST bug reports to ${req.get('origin')} to report bugs!`);
+    res.send(`Bug-Catcher up and running! POST bug reports here to report bugs!`);
 });
 
 const port = +process.env.PORT || 8888;
