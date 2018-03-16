@@ -24,6 +24,10 @@ app.post('/', (req, res) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.send(`Bug-Catcher up and running! POST bug reports to ${req.get('origin')} to report bugs!`);
+});
+
 const port = +process.env.PORT || 8888;
 collector.connect()
     .then(() => app.listen(port))
