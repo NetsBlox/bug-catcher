@@ -37,8 +37,20 @@ function isCollaborating(report) {
     return usesCollaboration;
 }
 
+function hasResetActionIds(report) {
+    const events = report.undoState.allEvents;
+
+    for (let i = 1; i < events.length; i++) {
+        if (events[i].id === 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 module.exports = {
     hasDeletedFailingBlock,
     hasUndefinedOwner,
     isCollaborating,
+    hasResetActionIds,
 };
